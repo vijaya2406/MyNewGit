@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b85d8984-b18f-410c-b69b-8bbca62e5e5b" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="0ccdf748-32ec-4d87-9b5a-a2cde5d51d99" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="testdb" />
+	</db:config>
+	<flow name="data-base-selectALL-flow" doc:id="681f7554-0c82-4dd1-b0ca-5ec72aac9ed9" >
+		<http:listener doc:name="Listener" doc:id="fe21ebb7-eaf3-4a90-8e90-10a31192df18" config-ref="HTTP_Listener_config" path="/getAll"/>
+		<db:select doc:name="Select" doc:id="53327b68-dae3-4760-bbbc-6ae59e8419ed" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from persons;]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="b8f18876-d2f9-4dee-8187-1daaa02d46fe">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="data-bas-selectbycity-flow" doc:id="4fb0f8ca-a2cd-48d1-8b26-7a4078d1d987" >
+		<http:listener doc:name="Listener" doc:id="284b9801-a04e-43a7-97d2-91e441e14529" config-ref="HTTP_Listener_config" path="/database"/>
+		<db:select doc:name="Select" doc:id="052ce411-6e20-499e-96a4-e7f6211ce5ce" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from persons where city = :city;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'city' : attributes.queryParams.city
+
+
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="9859c642-3439-4602-bb33-992bc8ef7431" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="data-baseFlow1" doc:id="6b7ef03d-49cd-44f3-a7a2-01ff3aa5c8e8" >
+		<http:listener doc:name="Listener" doc:id="bde07410-30c5-422d-a897-903155bd1b6c" config-ref="HTTP_Listener_config" path="/insert"/>
+		<ee:transform doc:name="Transform Message" doc:id="9e2c3fa0-1ea8-4aa0-8f2f-f9ed81e257a6">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:insert doc:name="Insert" doc:id="acfee414-f7fe-467f-b0c1-a0547416442f" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO Persons (PersonID, LastName, FirstName, Address, City)
+VALUES (:PersonID, :LastName, :FirstName, :Address, :City);]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="fa5f9567-8ecf-4800-90fd-7a4536d04dc4">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="data-baseFlow4" doc:id="95c5275c-988b-44e7-a232-fc7786d13b35" >
+		<http:listener doc:name="Listener" doc:id="a501958a-4614-4ec1-83e1-7e2dc5ea7853" config-ref="HTTP_Listener_config" path="/updatePersons"/>
+		<ee:transform doc:name="Transform Message" doc:id="b7bea26e-5edf-4998-983b-70ac88ca1188">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:update doc:name="Update" doc:id="637b8778-abf1-4f39-9d87-da082010ba59" config-ref="Database_Config">
+			<db:sql ><![CDATA[UPDATE Persons SET LastName = :LastName, FirstName = :FirstName, Address = :Address, City= :City WHERE PersonID = :PersonID;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Transform Message" doc:id="362bfc56-cddb-40b8-a5b5-1895872d8027" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="data-baseFlow" doc:id="c3da5d53-a026-4853-8e97-04ee8cfe0355" >
+		<http:listener doc:name="Listener" doc:id="ad2490fd-47f5-40f6-801d-c4c43e4f49aa" config-ref="HTTP_Listener_config" path="/delete"/>
+		<db:delete doc:name="Delete" doc:id="a6c7bb2a-e484-40c8-90d1-13b9a749de08" config-ref="Database_Config">
+			<db:sql ><![CDATA[DELETE FROM Persons WHERE PersonID = :PersonID;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'PersonID' : attributes.queryParams.PersonID
+}]]]></db:input-parameters>
+		</db:delete>
+		<ee:transform doc:name="Transform Message" doc:id="8dd5ca78-316c-4636-8162-cbb39a4fe027" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message : "deleted successfully................."
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="data-baseFlow2" doc:id="7387bf13-53ae-4c4d-a2e2-9b8977b0b491" >
+		<http:listener doc:name="Listener" doc:id="68e15e0c-7cbe-47b2-a7a5-8a3fc68ac1d4" config-ref="HTTP_Listener_config" path="/bulkinsert"/>
+		<ee:transform doc:name="Transform Message" doc:id="94cb1379-f6d7-4603-98ad-9523bb2596f1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:bulk-insert doc:name="Bulk insert" doc:id="14f5cef8-3504-451e-aa85-26a484a1d31e" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO Persons (PersonID, LastName, FirstName, Address, City)
+VALUES (:PersonID, :LastName, :FirstName, :Address, :City);]]></db:sql>
+		</db:bulk-insert>
+		<ee:transform doc:name="Transform Message" doc:id="039464f4-dc6a-4a1d-8d1f-1b790343aca3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message : "all details inserted in db successfully............."
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
